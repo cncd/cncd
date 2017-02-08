@@ -1,0 +1,4 @@
+baseurl = "https://cncd.org/"
+title = "CNCD"
+theme = "default"
+languageCode = "en-us"

@@ -1,0 +1,6 @@
+name = "default"
+min_version = 0.17
+
+[author]
+  name = "Brad Rydzewski"
+  homepage = "https://github.com/bradrydzewski"

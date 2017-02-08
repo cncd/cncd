@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+
+
+		<link href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" rel="stylesheet">
+		<link rel="stylesheet" type="text/css" href="/highlight.css">
+		<link rel="stylesheet" type="text/css" href="/reset.css">
+		<link rel="stylesheet" type="text/css" href="/style.css">
+		<link rel="stylesheet" type="text/css" href="/spec.css">
+
+		<title>Intermediate Representation Specification</title>
+	</head>
+	<body>
+		<aside>
+			<nav id="TableOfContents">
+<ul>
+<li><a href="#abstract">Abstract</a></li>
+<li><a href="#introduction">Introduction</a>
+<ul>
+<li><a href="#frontends">Frontends</a></li>
+<li><a href="#backends">Backends</a></li>
+</ul></li>
+<li><a href="#conformance">Conformance</a></li>
+<li><a href="#format">Format</a>
+<ul>
+<li><a href="#the-stage-interface">The <code>Stage</code> interface</a></li>
+<li><a href="#the-step-interface">The <code>Step</code> interface</a>
+<ul>
+<li><a href="#the-name-attribute">The <code>name</code> attribute</a></li>
+<li><a href="#the-alias-attribute">The <code>alias</code> attribute</a></li>
+<li><a href="#the-image-attribute">The <code>image</code> attribute</a></li>
+<li><a href="#the-pull-attribute">The <code>pull</code> attribute</a></li>
+<li><a href="#the-detached-attribute">The <code>detached</code> attribute</a></li>
+<li><a href="#the-privileged-attribute">The <code>privileged</code> attribute</a></li>
+<li><a href="#the-working-dir-attribute">The <code>working_dir</code> attribute</a></li>
+<li><a href="#the-environment-attribute">The <code>environment</code> attribute</a></li>
+<li><a href="#the-entryptoint-attribute">The <code>entryptoint</code> attribute</a></li>
+<li><a href="#the-command-attribute">The <code>command</code> attribute</a></li>
+<li><a href="#the-devices-attribute">The <code>devices</code> attribute</a></li>
+<li><a href="#the-dns-attribute">The <code>dns</code> attribute</a></li>
+<li><a href="#the-dns-search-attribute">The <code>dns_search</code> attribute</a></li>
+<li><a href="#the-extra-hosts-attribute">The <code>extra_hosts</code> attribute</a></li>
+<li><a href="#the-shm-size-attribute">The <code>shm_size</code> attribute</a></li>
+<li><a href="#the-tmpfs-attribute">The <code>tmpfs</code> attribute</a></li>
+<li><a href="#the-volumes-attribute">The <code>volumes</code> attribute</a></li>
+<li><a href="#the-networks-section">The <code>networks</code> section</a></li>
+<li><a href="#the-resources-section">The <code>resources</code> section</a></li>
+<li><a href="#the-auth-config-section">The <code>auth_config</code> section</a></li>
+<li><a href="#the-on-success-attribute">The <code>on_success</code> attribute</a></li>
+<li><a href="#the-on-failure-attribute">The <code>on_failure</code> attribute</a></li>
+</ul></li>
+<li><a href="#the-networks-section-1">The <code>Networks</code> section</a>
+<ul>
+<li><a href="#the-name-attribute-1">The <code>name</code> attribute</a></li>
+<li><a href="#the-driver-attribute">The <code>driver</code> attribute</a></li>
+<li><a href="#the-driver-opts-attribute">The <code>driver_opts</code> attribute</a></li>
+</ul></li>
+<li><a href="#the-volumes-section">The <code>Volumes</code> section</a>
+<ul>
+<li><a href="#the-name-attribute-2">The <code>name</code> attribute</a></li>
+<li><a href="#the-driver-attribute-1">The <code>driver</code> attribute</a></li>
+<li><a href="#the-driver-opts-attribute-1">The <code>driver_opts</code> attribute</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#security">Security</a></li>
+<li><a href="#disk-space">Disk Space</a></li>
+<li><a href="#examples">Examples</a>
+<ul>
+<li><a href="#example-pipeline">Example Pipeline</a></li>
+<li><a href="#example-pipeline-with-services">Example Pipeline with Services</a></li>
+</ul></li>
+<li><a href="#references">References</a>
+<ul>
+<li><a href="#normative-references">Normative References</a></li>
+<li><a href="#informative-references">Informative References</a></li>
+</ul></li>
+</ul>
+</nav>
+		</aside>
+		<main>
+			<header>
+				<h1>
+					<span>Intermediate Representation Specification</span>
+					<small>Cloud Native Continuous Delivery (CNCD) Working Group</small>
+				</h1>
+			</header>
+
+			<dl class="refs">
+				<dt>This Version</dt>
+				<dd>
+					
+					<a href="https://github.com/cncd/runtime-spec">https://github.com/cncd/runtime-spec</a>
+					
+				</dd>
+
+				<dt>Previous Versions</dt>
+				<dd>
+					
+					<a href="https://github.com/cncd/runtime-spec/tree/1.0.0">https://github.com/cncd/runtime-spec/tree/1.0.0</a>
+					
+				</dd>
+
+				<dt>Editors</dt>
+				<dd>
+					
+					<a href="https://github.com/bradrydzewski">bradrydzewski</a>
+					
+				</dd>
+
+				<dt>Raise Issues</dt>
+				<dd>
+					
+					<a href="https://github.com/cncd/runtime-spec/issues">https://github.com/cncd/runtime-spec/issues</a>
+					
+				</dd>
+			</dl>
+
+			<section class="spec">
+			
+
+<h1 id="abstract">Abstract</h1>
+
+<p>This specification describes a method for defining and executing continuous delivery pipelines in container environments. A continuous delivery pipeline is an automated manifestation of your process for getting software from version control to release.</p>
+
+<h1 id="introduction">Introduction</h1>
+
+<p><em>This section is non-normative.</em></p>
+
+<p>This specification introduces an intermediate representation (IR) for defining continuous deliver pipelines and their container execution environments. The intermediate representation should be machine writable, machine executable, and platform agnostic.</p>
+
+<h2 id="frontends">Frontends</h2>
+
+<p><em>This section is non-normative.</em></p>
+
+<p>The intermediate representation is not intended to be written by humans. Instead higher-level file formats are compiled to the intermediate representation. These compilers are known as frontends. Example frontend compilers may include:</p>
+
+<ul>
+<li>Travis Yaml</li>
+<li>GitLab Yaml</li>
+<li>Bitbucket Pipeline Yaml</li>
+</ul>
+
+<h2 id="backends">Backends</h2>
+
+<p><em>This section is non-normative.</em></p>
+
+<p>The intermediate representation should be platform agnostic. This means it can be executed by different container engines and orchestration platforms. These engines and platforms are known as backends. Example backends may include:</p>
+
+<ul>
+<li>Docker</li>
+<li>Docker Swarm</li>
+<li>Kubernetes</li>
+<li>Rocket</li>
+</ul>
+
+<h1 id="conformance">Conformance</h1>
+
+<p>As well as sections marked as non-normative, all authoring guidelines, diagrams, examples, and notes in this specification are non-normative. Everything else in this specification is normative.</p>
+
+<p>The key words &ldquo;MUST&rdquo;, &ldquo;MUST NOT&rdquo;, &ldquo;REQUIRED&rdquo;, &ldquo;SHALL&rdquo;, &ldquo;SHALL NOT&rdquo;, &ldquo;SHOULD&rdquo;, &ldquo;SHOULD NOT&rdquo;, &ldquo;RECOMMENDED&rdquo;, &ldquo;MAY&rdquo;, and &ldquo;OPTIONAL&rdquo; in this document are to be interpreted as described in <a href="https://tools.ietf.org/html/rfc2119">RFC2119</a>.</p>
+
+<h1 id="format">Format</h1>
+
+<p>The intermediate representation is a JSON document that defines the pipeline execution environment and execution steps. The intermediate representation consists of a top-level object that contains both required and optional members. Each of the members are defined below, as well as how their values are processed.</p>
+
+<pre><code class="language-typescript">interface Manifest {
+  pipeline: Stage[]
+  networks: Network[]
+  volumes: Volume[]
+}
+</code></pre>
+
+<p>The <code>pipeline</code> attribute must contain a collection of one or more <code>stage</code> objects. The stages defined in the pipeline must be executed sequentially in the oder in which they are defined.</p>
+
+<p>The <code>networks</code> attribute should contain a collection of one or more <code>network</code> objects. Networks may be referenced by individual steps and must be created prior to executing steps where a reference exists.</p>
+
+<p>The <code>volumes</code> attribute should contain a collection of one or more <code>volume</code> objects. Volumes may be referenced by individual steps and must be created prior to executing steps where a reference exists.</p>
+
+<h2 id="the-stage-interface">The <code>Stage</code> interface</h2>
+
+<p>The <code>stage</code> object represents a set of processes that are grouped together and executed in parallel. The stage does not complete until all processes have exited.</p>
+
+<pre><code class="language-typescript">interface Stage {
+  name: string
+  steps: Step[]
+}
+</code></pre>
+
+<p>The <code>name</code> attribute is required and must match <code>[a-zA-Z0-9_-]</code></p>
+
+<p>The <code>steps</code> attribute is required and must contain at least one <code>step</code>. If the stage contains multiple steps, each step is executed in parallel. The runtime agent should wait until all steps complete prior before it continues to the next stage in the pipeline.</p>
+
+<h2 id="the-step-interface">The <code>Step</code> interface</h2>
+
+<p>The <code>step</code> object defines a container process in the pipeline. The step attributes define how a container is created and started. Each of these attributes are defined below, as well as how their values are processed.</p>
+
+<pre><code class="language-typescript">class Step {
+  name: string
+  alias: string
+  image: string
+  pull: boolean
+  detached: boolean
+  privileged: boolean
+  working_dir: string
+  environment: [string, string]
+  entrypoint: string[]
+  command: string[]
+  devices: string[]
+  extra_hosts: string[]
+  dns: string[]
+  dns_search: string[]
+  shm_size: number
+  tmpfs: string[]
+  volumes: string[]
+  networks: Network[]
+  resources: Resources
+  auth_config: AuthConfig
+  on_failure: boolean
+  on_success: boolean
+}
+</code></pre>
+
+<h3 id="the-name-attribute">The <code>name</code> attribute</h3>
+
+<p>The name of the container. This should be globally unique and must match <code>[a-zA-Z0-9_-]</code>.</p>
+
+<h3 id="the-alias-attribute">The <code>alias</code> attribute</h3>
+
+<p>The name of the container as defined by the user (i.e. user-friendly name). Containers in the pipeline will be able to access the container user the alias as the hostname. This value must be unique within the pipeline, and must match <code>[a-zA-Z0-9_-]</code>.</p>
+
+<h3 id="the-image-attribute">The <code>image</code> attribute</h3>
+
+<p>The fully qualified image to start the container from. When defining a docker image the full name, including the tag, must be provided.</p>
+
+<pre><code>image: redis:latest
+image: library/redis:latest
+image: index.docker.io/library/redis:latest
+</code></pre>
+
+<h3 id="the-pull-attribute">The <code>pull</code> attribute</h3>
+
+<p>Pull the latest version of the image from the remote image registry.</p>
+
+<h3 id="the-detached-attribute">The <code>detached</code> attribute</h3>
+
+<p>Start the container and run in the background. The parent stage must not wait for the container to complete execution. The container exit code must be ignored and must not cause the pipeline to exit on failure.</p>
+
+<h3 id="the-privileged-attribute">The <code>privileged</code> attribute</h3>
+
+<p>Start the container with extended privileges.</p>
+
+<h3 id="the-working-dir-attribute">The <code>working_dir</code> attribute</h3>
+
+<p>Start the container in the specified working directory. This must be the absolute path of the directory inside the container. The container engine (e.g. Docker) may create the working directory if it does not exist, however, this behavior may vary.</p>
+
+<h3 id="the-environment-attribute">The <code>environment</code> attribute</h3>
+
+<p>Set environment variables in the container.</p>
+
+<pre><code class="language-json">{
+  &quot;GOPATH&quot;: &quot;/go&quot;,
+  &quot;DOCKER_HOST&quot;: &quot;unix:///var/run/docker.sock&quot;
+}
+</code></pre>
+
+<h3 id="the-entryptoint-attribute">The <code>entryptoint</code> attribute</h3>
+
+<p>Override the default entrypoint.</p>
+
+<h3 id="the-command-attribute">The <code>command</code> attribute</h3>
+
+<p>todo</p>
+
+<h3 id="the-devices-attribute">The <code>devices</code> attribute</h3>
+
+<p>Expose devices to a container. For example, a specific block storage device or loop device or audio device can be added to an otherwise unprivileged container.</p>
+
+<pre><code class="language-json">[
+  &quot;/dev/sdc:/dev/xvdc&quot;
+]
+</code></pre>
+
+<h3 id="the-dns-attribute">The <code>dns</code> attribute</h3>
+
+<p>Sets the IP addresses added as server lines to the container&rsquo;s <code>/etc/resolv.conf</code> file.</p>
+
+<pre><code class="language-json">[
+  &quot;8.8.8.8&quot;,
+  &quot;9.9.9.9&quot;
+]
+</code></pre>
+
+<h3 id="the-dns-search-attribute">The <code>dns_search</code> attribute</h3>
+
+<p>Sets the domain names that are searched when a bare unqualified hostname is used inside of the container, by writing search lines into the container&rsquo;s <code>/etc/resolv.conf</code>.</p>
+
+<pre><code class="language-json">[
+  &quot;dc1.example.com&quot;,
+  &quot;dc2.example.com&quot;
+]
+</code></pre>
+
+<h3 id="the-extra-hosts-attribute">The <code>extra_hosts</code> attribute</h3>
+
+<p>Add additional lines to the container&rsquo;s <code>/etc/hosts</code> file.</p>
+
+<pre><code class="language-json">[
+  &quot;somehost:162.242.195.82&quot;,
+  &quot;otherhost:50.31.209.229&quot;
+]
+</code></pre>
+
+<h3 id="the-shm-size-attribute">The <code>shm_size</code> attribute</h3>
+
+<p>Sets the size of <code>/dev/shm</code> in bytes:</p>
+
+<pre><code class="language-json">{
+  &quot;shm_size&quot;: 64000000
+}
+</code></pre>
+
+<h3 id="the-tmpfs-attribute">The <code>tmpfs</code> attribute</h3>
+
+<p>Mount an empty temporary file system inside of the container.</p>
+
+<pre><code class="language-json">[
+  &quot;/run&quot;,
+  &quot;/tmp&quot;
+]
+</code></pre>
+
+<h3 id="the-volumes-attribute">The <code>volumes</code> attribute</h3>
+
+<p>Mount paths or named volumes, optionally specifying a path on the host machine</p>
+
+<h3 id="the-networks-section">The <code>networks</code> section</h3>
+
+<pre><code class="language-typescript">interface Network {
+  name: string
+  aliases: string[]
+}
+</code></pre>
+
+<h3 id="the-resources-section">The <code>resources</code> section</h3>
+
+<pre><code class="language-typescript">interface Resources {
+  limits: Limits
+  reservations: Reservations
+}
+
+interface Limits {
+  cpus: string
+  memory: number
+}
+
+interface Reservations {
+  cpus: string
+  memory: number
+}
+</code></pre>
+
+<h3 id="the-auth-config-section">The <code>auth_config</code> section</h3>
+
+<pre><code class="language-typescript">interface AuthConfig {
+  username: string
+  password: string
+  email: string
+}
+</code></pre>
+
+<h3 id="the-on-success-attribute">The <code>on_success</code> attribute</h3>
+
+<p>todo</p>
+
+<h3 id="the-on-failure-attribute">The <code>on_failure</code> attribute</h3>
+
+<p>todo</p>
+
+<h2 id="the-networks-section-1">The <code>Networks</code> section</h2>
+
+<pre><code class="language-typescript">interface Volume {
+  name: string
+  driver: string
+  driver_opts: [string, string]
+}
+</code></pre>
+
+<h3 id="the-name-attribute-1">The <code>name</code> attribute</h3>
+
+<p>todo</p>
+
+<h3 id="the-driver-attribute">The <code>driver</code> attribute</h3>
+
+<p>todo</p>
+
+<h3 id="the-driver-opts-attribute">The <code>driver_opts</code> attribute</h3>
+
+<p>todo</p>
+
+<h2 id="the-volumes-section">The <code>Volumes</code> section</h2>
+
+<pre><code class="language-typescript">interface Volume {
+  name: string
+  driver: string
+  driver_opts: [string, string]
+}
+</code></pre>
+
+<h3 id="the-name-attribute-2">The <code>name</code> attribute</h3>
+
+<p>todo</p>
+
+<h3 id="the-driver-attribute-1">The <code>driver</code> attribute</h3>
+
+<p>todo</p>
+
+<h3 id="the-driver-opts-attribute-1">The <code>driver_opts</code> attribute</h3>
+
+<p>todo</p>
+
+<h1 id="security">Security</h1>
+
+<p><em>This section is non-normative.</em></p>
+
+<p>Backends should audit the use of privileged features and capabilities because hostile authors could otherwise use these settings to compromise the host machine.</p>
+
+<h1 id="disk-space">Disk Space</h1>
+
+<p><em>This section is non-normative.</em></p>
+
+<p>Backends should limit the total amount of space allowed for volume storage, because hostile authors could otherwise use this feature to exhaust the system&rsquo;s available disk space.</p>
+
+<p>Backends should also limit the total amount of space allowed for caching images (e.g. Docker images), and should regularly purge the cache to remove unused or stale images.</p>
+
+<h1 id="examples">Examples</h1>
+
+<p><em>This section is non-normative.</em></p>
+
+<p>This section shows how frontends can make use of the various features of this specification.</p>
+
+<h2 id="example-pipeline">Example Pipeline</h2>
+
+<p><em>This section is non-normative.</em></p>
+
+<p>In the following example the pipeline manifest defines two stages. The first stage clones the github project to a shared volume. The second stage executes the test suite for the project.</p>
+
+<pre><code class="language-json">{
+  &quot;pipeline&quot;: [
+    {
+      &quot;name&quot;: &quot;clone_stage&quot;,
+      &quot;steps&quot;: [
+        {
+          &quot;name&quot;: &quot;git_clone_step&quot;,
+          &quot;image&quot;: &quot;git:latest&quot;,
+          &quot;entrypoint&quot;: [
+            &quot;/bin/sh&quot;,
+            &quot;-c&quot;
+          ],
+          &quot;command&quot;: [
+            &quot;git clone git://github.com/foo/bar.git /go/src/github.com/foo/bar&quot;
+          ],
+          &quot;volumes&quot;: [
+            &quot;default:/go&quot;
+          ],
+          &quot;on_success&quot;: true,
+          &quot;on_failure&quot;: false
+        }
+      ],
+    },
+    {
+      &quot;name&quot;: &quot;test_stage&quot;,
+      &quot;steps&quot;: [
+        {
+          &quot;name&quot;: &quot;go_test_step&quot;,
+          &quot;image&quot;: &quot;golang:latest&quot;,
+          &quot;entrypoint&quot;: [
+            &quot;/bin/sh&quot;,
+            &quot;-c&quot;
+          ],
+          &quot;command&quot;: [
+            &quot;go test -v github.com/foo/bar&quot;
+          ],
+          &quot;volumes&quot;: [
+            &quot;default:/go&quot;
+          ],
+          &quot;on_success&quot;: true,
+          &quot;on_failure&quot;: false
+        }
+      ],
+    }
+  ],
+
+  &quot;volumes&quot;: [
+    {
+      &quot;name&quot;: &quot;default&quot;,
+      &quot;driver&quot;: &quot;local&quot;
+    }
+  ]
+}
+</code></pre>
+
+<h2 id="example-pipeline-with-services">Example Pipeline with Services</h2>
+
+<p><em>This section is non-normative.</em></p>
+
+<p>In the following example the pipeline manifest defines a service container (redis) that runs in detached mode, which is non-blocking. Subsequent steps in the pipeline are able to access the service container using its alias hostname.</p>
+
+<pre><code class="language-json">{
+  &quot;pipeline&quot;: [
+    {
+      &quot;name&quot;: &quot;clone_stage&quot;,
+      &quot;steps&quot;: [
+        {
+          &quot;name&quot;: &quot;clone&quot;,
+          &quot;image&quot;: &quot;git:latest&quot;,
+          &quot;entrypoint&quot;: [
+            &quot;/bin/sh&quot;,
+            &quot;-c&quot;
+          ],
+          &quot;command&quot;: [
+            &quot;git clone git://github.com/foo/bar.git /go/src/github.com/foo/bar&quot;
+          ],
+          &quot;volumes&quot;: [
+            &quot;default:/go&quot;
+          ],
+          &quot;on_success&quot;: true,
+          &quot;on_failure&quot;: false
+        }
+      ],
+    },
+    {
+      &quot;name&quot;: &quot;service_stage&quot;,
+      &quot;steps&quot;: [
+        {
+          &quot;name&quot;: &quot;redis_step&quot;,
+          &quot;alias&quot;: &quot;redis&quot;,
+          &quot;image&quot;: &quot;redis:latest&quot;,
+          &quot;detach&quot;: true,
+          &quot;networks&quot;: [
+            {
+              &quot;name&quot;: &quot;default&quot;,
+              &quot;aliases&quot;: [ &quot;redis&quot; ]
+            }
+          ],
+          &quot;volumes&quot;: [
+            &quot;default:/go&quot;
+          ],
+          &quot;on_success&quot;: true,
+          &quot;on_failure&quot;: false
+        }
+      ],
+    },
+    {
+      &quot;name&quot;: &quot;test_stage&quot;,
+      &quot;steps&quot;: [
+        {
+          &quot;name&quot;: &quot;test_step&quot;,
+          &quot;image&quot;: &quot;golang:latest&quot;,
+          &quot;entrypoint&quot;: [
+            &quot;/bin/sh&quot;,
+            &quot;-c&quot;
+          ],
+          &quot;command&quot;: [
+            &quot;go test -v github.com/foo/bar&quot;
+          ],
+          &quot;networks&quot;: [
+            {
+              &quot;name&quot;: &quot;default&quot;,
+              &quot;aliases&quot;: [ &quot;redis&quot; ]
+            }
+          ],
+          &quot;volumes&quot;: [
+            &quot;default:/go&quot;
+          ],
+          &quot;on_success&quot;: true,
+          &quot;on_failure&quot;: false
+        }
+      ],
+    }
+  ],
+
+  &quot;networks&quot;: [
+    {
+      &quot;name&quot;: &quot;default&quot;,
+      &quot;driver&quot;: &quot;bridge&quot;
+    }
+  ],
+
+  &quot;volumes&quot;: [
+    {
+      &quot;name&quot;: &quot;default&quot;,
+      &quot;driver&quot;: &quot;local&quot;
+    }
+  ]
+}
+</code></pre>
+
+<h1 id="references">References</h1>
+
+<h2 id="normative-references">Normative References</h2>
+
+<dl>
+<dt>[JSON]</dt>
+<dd>A. Barth. HTTP State Management Mechanism. April 2011. Proposed Standard. URL: <a href="https://tools.ietf.org/html/rfc6265">https://tools.ietf.org/html/rfc6265</a></dd>
+</dl>
+
+<h2 id="informative-references">Informative References</h2>
+
+<dl>
+<dt>[DOCKER]</dt>
+<dd><a href="https://docs.docker.com/engine/reference/run/">Docker Run Reference</a>, Docker Inc.</dd>
+<dt>[DOCKER COMPOSE]</dt>
+<dd><a href="https://docs.docker.com/compose/compose-file/">Compose File Reference</a>, Docker Inc.</dd>
+</dl>
+
+			</section>
+		</main>
+
+		<script src="/highlight.pack.js"></script>
+		<script>hljs.initHighlightingOnLoad();</script>
+	<script data-no-instant>document.write('<script src="/livereload.js?port=1313&mindelay=10"></' + 'script>')</script></body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+
+
+		<link href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" rel="stylesheet">
+		<link rel="stylesheet" type="text/css" href="/highlight.css">
+		<link rel="stylesheet" type="text/css" href="/reset.css">
+		<link rel="stylesheet" type="text/css" href="/style.css">
+		<link rel="stylesheet" type="text/css" href="/spec.css">
+
+		<title>{{ .Title }}</title>
+	</head>
+	<body>
+		<aside>
+			{{ .TableOfContents }}
+		</aside>
+		<main>
+			<header>
+				<h1>
+					<span>{{ .Title }}</span>
+					<small>Cloud Native Continuous Delivery (CNCD) Working Group</small>
+				</h1>
+			</header>
+
+			<dl class="refs">
+				<dt>This Version</dt>
+				<dd>
+					{{ with .Params.versions.current }}
+					<a href="{{ . }}">{{ . }}</a>
+					{{ end }}
+				</dd>
+
+				<dt>Previous Versions</dt>
+				<dd>
+					{{ range .Params.versions.previous }}
+					<a href="{{ . }}">{{ . }}</a>
+					{{ end }}
+				</dd>
+
+				<dt>Editors</dt>
+				<dd>
+					{{ range .Params.editors }}
+					<a href="{{ .link }}">{{ .name }}</a>
+					{{ end }}
+				</dd>
+
+				<dt>Raise Issues</dt>
+				<dd>
+					{{ with .Params.participate.issues }}
+					<a href="{{ . }}">{{ . }}</a>
+					{{ end }}
+				</dd>
+			</dl>
+
+			<section class="spec">
+			{{ .Content }}
+			</section>
+		</main>
+
+		<script src="/highlight.pack.js"></script>
+		<script>hljs.initHighlightingOnLoad();</script>
+	</body>
+</html>
