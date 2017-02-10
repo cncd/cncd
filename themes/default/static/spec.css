@@ -1,7 +1,8 @@
 pre {
   background: #f7f7f7;
   font-family: 'Roboto Mono', monospace;
-  font-size: 13px;
+  /*font-size: 13px;*/
+  font-size: 14px;
   line-height: 18px;
   padding:20px;
 }
@@ -52,7 +53,7 @@ h3:before {
 
 h3 code {
   font-family: 'Roboto Mono', monospace;
-  font-size: 80%;
+  font-size: 100%;
   color: orangered;
 }
 
@@ -68,7 +69,7 @@ p em {
 
 p > code {
   font-family: 'Roboto Mono', monospace;
-  font-size: 80%;
+  font-size: 100%;
   color: orangered;
 }
 

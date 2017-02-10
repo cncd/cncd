@@ -1,7 +1,6 @@
 +++
 date = "2017-02-06T22:57:35+07:00"
-title = "Intermediate Representation Specification"
-version = "1.0-draft"
+title = "Intermediate Representation Specification (Draft)"
 
 [params]
   [[editors]]
@@ -75,7 +74,7 @@ The `networks` attribute should contain a collection of one or more `network` ob
 
 The `volumes` attribute should contain a collection of one or more `volume` objects. Volumes may be referenced by individual steps and must be created prior to executing steps where a reference exists.
 
-## The `Stage` interface
+## The `Stage` object
 
 The `stage` object represents a set of processes that are grouped together and executed in parallel. The stage does not complete until all processes have exited.
 
@@ -90,7 +89,7 @@ The `name` attribute is required and must match `[a-zA-Z0-9_-]`
 
 The `steps` attribute is required and must contain at least one `step`. If the stage contains multiple steps, each step is executed in parallel. The runtime agent should wait until all steps complete prior before it continues to the next stage in the pipeline.
 
-## The `Step` interface
+## The `Step` object
 
 The `step` object defines a container process in the pipeline. The step attributes define how a container is created and started. Each of these attributes are defined below, as well as how their values are processed.
 
@@ -123,15 +122,17 @@ class Step {
 
 ### The `name` attribute
 
-The name of the container. This should be globally unique and must match `[a-zA-Z0-9_-]`.
+The name of the container. This attribute is of type `string` and is required. This container name should be globally unique and must match `[a-zA-Z0-9_-]`.
 
 ### The `alias` attribute
 
-The name of the container as defined by the user (i.e. user-friendly name). Containers in the pipeline will be able to access the container user the alias as the hostname. This value must be unique within the pipeline, and must match `[a-zA-Z0-9_-]`.
+The name of the container as defined by the user (i.e. user-friendly name). This attribute is of type `string` and is required. The container alias must match `[a-zA-Z0-9_-]`.
+
+Note that the alias is used to create network links. You can communicate with containers in your pipeline over the network using the alias as the hostname.
 
 ### The `image` attribute
 
-The fully qualified image to start the container from. When defining a docker image the full name, including the tag, must be provided.
+The fully qualified image to start the container from. This attribute is of type string and is required. The image name must also include the tag, where applicable.
 
 ```
 image: redis:latest
@@ -141,23 +142,23 @@ image: index.docker.io/library/redis:latest
 
 ### The `pull` attribute
 
-Pull the latest version of the image from the remote image registry.
+Pull the latest version of the image from the remote image registry. This attribute is of type `boolean` and is optional. The default value is false.
 
 ### The `detached` attribute
 
-Start the container and run in the background. The parent stage must not wait for the container to complete execution. The container exit code must be ignored and must not cause the pipeline to exit on failure.
+Start the container and send to the background, and proceed to the next step in the pipeline. This attribute is of type `boolean` and is optional. The default value is false.
 
 ### The `privileged` attribute
 
-Start the container with extended privileges.
+Start the container with extended privileges. This attribute is of type `boolean` and is optional. The default value is false.
 
 ### The `working_dir` attribute
 
-Start the container in the specified working directory. This must be the absolute path of the directory inside the container. The container engine (e.g. Docker) may create the working directory if it does not exist, however, this behavior may vary.
+Start the container in the specified working directory. This attribute is of type `string` and is optional. Note that the value must be the absolute path of the directory inside the container.
 
 ### The `environment` attribute
 
-Set environment variables in the container.
+Set environment variables in the container. This value is of type `[string, string]` and is optional.
 
 ```json
 {
@@ -166,9 +167,9 @@ Set environment variables in the container.
 }
 ```
 
-### The `entryptoint` attribute
+### The `entrypoint` attribute
 
-Override the default entrypoint.
+todo
 
 ### The `command` attribute
 
@@ -176,7 +177,7 @@ todo
 
 ### The `devices` attribute
 
-Expose devices to a container. For example, a specific block storage device or loop device or audio device can be added to an otherwise unprivileged container.
+Expose devices to a container. This value is of type `string[]` and is optional.
 
 ```json
 [
@@ -186,7 +187,7 @@ Expose devices to a container. For example, a specific block storage device or l
 
 ### The `dns` attribute
 
-Sets the IP addresses added as server lines to the container's `/etc/resolv.conf` file.
+Sets the IP addresses added as server lines to the container's `/etc/resolv.conf` file. This value is of type `string[]` and is optional.
 
 ```json
 [
@@ -197,7 +198,7 @@ Sets the IP addresses added as server lines to the container's `/etc/resolv.conf
 
 ### The `dns_search` attribute
 
-Sets the domain names that are searched when a bare unqualified hostname is used inside of the container, by writing search lines into the container's `/etc/resolv.conf`.
+Sets the domain names that are searched when a bare unqualified hostname is used by writing search lines to the container's `/etc/resolv.conf` file. This value is of type `string[]` and is optional.
 
 ```json
 [
@@ -208,7 +209,7 @@ Sets the domain names that are searched when a bare unqualified hostname is used
 
 ### The `extra_hosts` attribute
 
-Add additional lines to the container's `/etc/hosts` file.
+Adds additional lines to the container's `/etc/hosts` file. This value is of type `string[]` and is optional.
 
 ```json
 [
@@ -219,7 +220,7 @@ Add additional lines to the container's `/etc/hosts` file.
 
 ### The `shm_size` attribute
 
-Sets the size of `/dev/shm` in bytes:
+Sets the size of `/dev/shm` in bytes. This value is of type `int64` and is optional.
 
 ```json
 {
@@ -227,10 +228,9 @@ Sets the size of `/dev/shm` in bytes:
 }
 ```
 
-
 ### The `tmpfs` attribute
 
-Mount an empty temporary file system inside of the container.
+Mount an empty temporary file system inside of the container. This value is of type `string[]` and is optional.
 
 ```json
 [
@@ -241,9 +241,18 @@ Mount an empty temporary file system inside of the container.
 
 ### The `volumes` attribute
 
-Mount paths or named volumes, optionally specifying a path on the host machine
+Mount paths or named volumes, optionally specifying a path on the host machine. This value is of type `string[]` and is optional.
 
-### The `networks` section
+```json
+[
+  "default:/root",
+  "/var/run/docker.sock:/var/run/docker.sock"
+]
+```
+
+### The `networks` attribute
+
+todo
 
 ```typescript
 interface Network {
@@ -252,26 +261,25 @@ interface Network {
 }
 ```
 
-### The `resources` section
+### The `resources` attribute
+
+The `resources` attribute can be used to reserve resources and apply resource limits to the container.
 
 ```typescript
 interface Resources {
   limits: Limits
-  reservations: Reservations
+  reservations: Limits
 }
 
 interface Limits {
   cpus: string
   memory: number
 }
-
-interface Reservations {
-  cpus: string
-  memory: number
-}
 ```
 
 ### The `auth_config` section
+
+todo
 
 ```typescript
 interface AuthConfig {
@@ -283,36 +291,55 @@ interface AuthConfig {
 
 ### The `on_success` attribute
 
-todo
+Execute the step when the pipeline state is passing. This attribute is of type `boolean` and is required. If this value is missing the step may be ignored and may not execute.
 
 ### The `on_failure` attribute
 
-todo
+Execute the step even when the pipeline state is failing. This attribute is of type `boolean` and is optional. If this value is missing the the default value of false is assumed.
+
+This attribute can be used in conjunction with `on_success`. If both attributes are true, the step will always execute regardless of the pipeline state. This may be useful for configuring a notification step that executes both on success and on failure (non-normative).
 
 ## The `Networks` section
 
+todo: add description
+
 ```typescript
-interface Volume {
+interface Network {
   name: string
   driver: string
   driver_opts: [string, string]
 }
 ```
 
+Example default network:
+
+```json
+{
+  "networks": [
+    {
+      "name": "default",
+      "driver": "local"
+    }
+  ]
+}
+```
+
 ### The `name` attribute
 
-todo
+The name of the network. This attribute is of type `string` and is required. The name should be globally unique and must match `[a-zA-Z0-9_-]`.
 
 ### The `driver` attribute
 
-todo
+The name of the network driver. This attribute is of type `string` and is required.
 
 ### The `driver_opts` attribute
 
-todo
+Additional network driver options in key value format.
 
 ## The `Volumes` section
 
+todo: add description
+
 ```typescript
 interface Volume {
   name: string
@@ -321,17 +348,30 @@ interface Volume {
 }
 ```
 
+Example default volume:
+
+```json
+{
+  "volumes": [
+    {
+      "name": "default",
+      "driver": "local"
+    }
+  ]
+}
+```
+
 ### The `name` attribute
 
-todo
+The name of the volume. This attribute is of type `string` and is required. The name should be globally unique and must match `[a-zA-Z0-9_-]`.
 
 ### The `driver` attribute
 
-todo
+The name of the volume driver. This attribute is of type `string` and is required.
 
 ### The `driver_opts` attribute
 
-todo
+Additional volume driver options in key value format.
 
 # Security
 
@@ -351,7 +391,7 @@ Backends should also limit the total amount of space allowed for caching images 
 
 _This section is non-normative._
 
-This section shows how frontends can make use of the various features of this specification.
+This section provides samples of the intermediate representation to highlight various features of this specification.
 
 ## Example Pipeline
 
@@ -512,17 +552,98 @@ In the following example the intermediate representation defines a service conta
 }
 ```
 
+## Example Pipeline with Parallelism
+
+_This section is non-normative._
+
+In the following example the intermediate representation defines two stages. The first stage clones the github project to a shared volume. The second stage builds and tests the frontend and backend in parallel.
+
+```json
+{
+  "pipeline": [
+    {
+      "name": "clone_stage",
+      "steps": [
+        {
+          "name": "git_clone_step",
+          "image": "git:latest",
+          "working_dir": "/go/src/github.com/foo/bar",
+          "entrypoint": [
+            "/bin/sh",
+            "-c"
+          ],
+          "command": [
+            "git clone git://github.com/foo/bar.git /go/src/github.com/foo/bar"
+          ],
+          "volumes": [
+            "default:/go"
+          ],
+          "on_success": true,
+          "on_failure": false
+        }
+      ],
+    },
+    {
+      "name": "test_stage",
+      "steps": [
+        {
+          "name": "go_test_step",
+          "image": "golang:latest",
+          "working_dir": "/go/src/github.com/foo/bar",
+          "entrypoint": [
+            "/bin/sh",
+            "-c"
+          ],
+          "command": [
+            "go test -v; go build"
+          ],
+          "volumes": [
+            "default:/go"
+          ],
+          "on_success": true,
+          "on_failure": false
+        },
+        {
+          "name": "go_test_step",
+          "image": "golang:latest",
+          "working_dir": "/go/src/github.com/foo/bar",
+          "entrypoint": [
+            "/bin/sh",
+            "-c"
+          ],
+          "command": [
+            "npm install; npm run tests; npm run bundle"
+          ],
+          "volumes": [
+            "default:/go"
+          ],
+          "on_success": true,
+          "on_failure": false
+        }
+      ],
+    }
+  ],
+
+  "volumes": [
+    {
+      "name": "default",
+      "driver": "local"
+    }
+  ]
+}
+```
+
 # References
 
 ## Normative References
 
-[JSON]
+JSON SPECIFICATION
 : A. Barth. HTTP State Management Mechanism. April 2011. https://tools.ietf.org/html/rfc6265
 
 ## Informative References
 
-[DOCKER]
+DOCKER RUN
 : [Docker Run Reference](https://docs.docker.com/engine/reference/run/), Docker Inc.
 
-[DOCKER COMPOSE]
+DOCKER COMPOSE
 : [Compose File Reference](https://docs.docker.com/compose/compose-file/), Docker Inc.

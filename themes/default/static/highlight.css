@@ -101,5 +101,11 @@ github.com style (c) Vasily Polovnyov <vast@whiteants.net>
 /* CUSTOM */
 
 .hljs.language-typescript .hljs-built_in {
-  color: #008080;
+  color: orchid;
+}
+
+.hljs.typescript .hljs-keyword,
+.hljs.language-typescript .hljs-keyword {
+  font-weight: normal;
+  color: #333;
 }
