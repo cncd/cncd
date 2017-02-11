@@ -8,13 +8,13 @@ title = "Intermediate Representation Specification (Draft)"
     link = "https://github.com/bradrydzewski"
 
   [versions]
-    current = "https://github.com/cncd/runtime-spec"
+    current = "https://github.com/cncd/cncd"
     previous = [
-      "https://github.com/cncd/runtime-spec/tree/1.0.0",
+      "https://github.com/cncd/cncd/tree/1.0.0",
     ]
 
   [participate]
-    issues = "https://github.com/cncd/runtime-spec/issues"
+    issues = "https://github.com/cncd/cncd/issues"
 +++
 
 # Abstract
