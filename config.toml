@@ -1,4 +1,4 @@
-baseurl = "https://cncd.org/"
+baseurl = "http://cncd.drone.io/"
 title = "CNCD"
 theme = "default"
 languageCode = "en-us"

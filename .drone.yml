@@ -1,0 +1,26 @@
+workspace:
+  path: src
+
+pipeline:
+  build:
+    image: webhippie/hugo:latest
+    commands:
+      - hugo
+
+  upload:
+    image: plugins/s3-sync:1.1
+    access: public-read
+    region: us-east-1
+    bucket: cncd.drone.io
+    source: public/
+    target: /
+    delete: false
+    secret_key: ${AWS_SECRET_ACCESS_KEY}
+    access_key: ${AWS_ACCESS_KEY_ID}
+    content_type:
+      ".svg": image/svg+xml
+    when:
+      event: push
+      branch: master
+
+
