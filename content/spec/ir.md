@@ -361,7 +361,7 @@ The intermediate representation is a JSON document that defines the pipeline exe
 
 ## The `version` attribute
 
-The `version` attribute defines the version of the intermediate representation. This attribute is of type `string` and is optional. When empty the runtime should assume to the latest supported version of the specification.
+The `version` attribute specifies the version of the intermediate representation. This attribute is of type `string` and is optional. When empty the runtime should assume to the latest supported version of the specification.
 
 ## The `volumes` section
 
@@ -409,7 +409,7 @@ Example bridge network configuration:
 
 ```json
 {
-  "volumes": [
+  "networks": [
     {
       "name": "default",
       "driver": "bridge"
