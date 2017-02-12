@@ -10,7 +10,7 @@ title = "Intermediate Representation Specification (Draft)"
   [versions]
     current = "https://github.com/cncd/cncd"
     previous = [
-      "https://github.com/cncd/cncd/tree/1.0.0",
+      "https://github.com/cncd/cncd/tree/master",
     ]
 
   [participate]
@@ -56,27 +56,26 @@ As well as sections marked as non-normative, all authoring guidelines, diagrams,
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC2119](https://tools.ietf.org/html/rfc2119).
 
-# Format
+# Structure
 
-The intermediate representation is a JSON document that defines the pipeline execution environment and execution steps. The intermediate representation consists of a top-level object that contains both required and optional members. Each of the members are defined below, as well as how their values are processed.
+This section defines the structure of the intermediate representation and custom types used to define the pipeline configuration and execution environment.
+
+## The `Config` object
+
+The `Config` is the top-level object used to represent the pipeline.
 
 ```typescript
-interface Spec {
+interface Config {
+  version: string
   pipeline: Stage[]
   networks: Network[]
   volumes: Volume[]
 }
 ```
 
-The `pipeline` attribute must contain a collection of one or more `stage` objects. The stages defined in the pipeline must be executed sequentially in the oder in which they are defined.
-
-The `networks` attribute should contain a collection of one or more `network` objects. Networks may be referenced by individual steps and must be created prior to executing steps where a reference exists.
-
-The `volumes` attribute should contain a collection of one or more `volume` objects. Volumes may be referenced by individual steps and must be created prior to executing steps where a reference exists.
-
 ## The `Stage` object
 
-The `stage` object represents a set of processes that are grouped together and executed in parallel. The stage does not complete until all processes have exited.
+The `Stage` object defines a group of steps.
 
 ```typescript
 interface Stage {
@@ -85,16 +84,20 @@ interface Stage {
 }
 ```
 
-The `name` attribute is required and must match `[a-zA-Z0-9_-]`
+### The `name` attribute
+
+The name of the stage. This attribute is of type string and is required. The name should be globally unique and must match `[a-zA-Z0-9_-]`.
+
+### The `steps` attribute
 
 The `steps` attribute is required and must contain at least one `step`. If the stage contains multiple steps, each step is executed in parallel. The runtime agent should wait until all steps complete prior before it continues to the next stage in the pipeline.
 
 ## The `Step` object
 
-The `step` object defines a container process in the pipeline. The step attributes define how a container is created and started. Each of these attributes are defined below, as well as how their values are processed.
+The `Step` object defines an individual container process in the pipeline.
 
 ```typescript
-class Step {
+interface Step {
   name: string
   alias: string
   image: string
@@ -112,9 +115,8 @@ class Step {
   shm_size: number
   tmpfs: string[]
   volumes: string[]
-  networks: Network[]
-  resources: Resources
-  auth_config: AuthConfig
+  networks: Conn[]
+  auth_config: Auth
   on_failure: boolean
   on_success: boolean
 }
@@ -126,9 +128,7 @@ The name of the container. This attribute is of type `string` and is required. T
 
 ### The `alias` attribute
 
-The name of the container as defined by the user (i.e. user-friendly name). This attribute is of type `string` and is required. The container alias must match `[a-zA-Z0-9_-]`.
-
-Note that the alias is used to create network links. You can communicate with containers in your pipeline over the network using the alias as the hostname.
+The name of the container as defined by the user (i.e. user-friendly name). This attribute is of type `string` and is required. The container alias must match `[a-zA-Z0-9_-]`. The alias should be used to create network links, allowing inter-container communication using the alias as the hostname.
 
 ### The `image` attribute
 
@@ -252,42 +252,11 @@ Mount paths or named volumes, optionally specifying a path on the host machine. 
 
 ### The `networks` attribute
 
-todo
-
-```typescript
-interface Network {
-  name: string
-  aliases: string[]
-}
-```
-
-### The `resources` attribute
-
-The `resources` attribute can be used to reserve resources and apply resource limits to the container.
-
-```typescript
-interface Resources {
-  limits: Limits
-  reservations: Limits
-}
-
-interface Limits {
-  cpus: string
-  memory: number
-}
-```
+Connects the container to zero or many networks. This attribute is of type `Conn[]` and is optional.
 
 ### The `auth_config` section
 
-todo
-
-```typescript
-interface AuthConfig {
-  username: string
-  password: string
-  email: string
-}
-```
+Authentication credentials used to download a container image. This attribute is of type `Auth` and is optional.
 
 ### The `on_success` attribute
 
@@ -299,28 +268,45 @@ Execute the step even when the pipeline state is failing. This attribute is of t
 
 This attribute can be used in conjunction with `on_success`. If both attributes are true, the step will always execute regardless of the pipeline state. This may be useful for configuring a notification step that executes both on success and on failure (non-normative).
 
-## The `Networks` section
+## The `Auth` object
 
-todo: add description
+The `Auth` object defines authentication credentials used to download container images.
+
+```typescript
+interface Auth {
+  username: string
+  password: string
+}
+```
+
+## The `Conn` object
+
+The `Conn` object defines a container network connection. This information is used to connect a container to a network with optional support for inter-container communication using hostname aliases.
+
+```typescript
+interface Conn {
+  name: string
+  aliases: string[]
+}
+```
+
+<!-- ### The `name` attribute
+
+The name of the `Network`. This attribute is of type `string` and is required.
+
+### The `alias` attribute
+
+The optional list of hostnames for a container on the network. Containers on the same network can use an alias to connect to the container. -->
+
+## The `Network` object
+
+The `Network` object defines a network interface. Each pipeline can have zero or many networks and use these network to facilitate inter-container communication. Example use cases may include linking a service container (e.g. redis) to the build container for integration testing.
 
 ```typescript
 interface Network {
   name: string
   driver: string
   driver_opts: [string, string]
-}
-```
-
-Example default network:
-
-```json
-{
-  "networks": [
-    {
-      "name": "default",
-      "driver": "local"
-    }
-  ]
 }
 ```
 
@@ -336,28 +322,15 @@ The name of the network driver. This attribute is of type `string` and is requir
 
 Additional network driver options in key value format.
 
-## The `Volumes` section
+## The `Volume` object
 
-todo: add description
+The `Volume` object defines a container volume. Each pipeline can have zero or many volumes and use these volumes to to persist data and share state. Example use cases may include cloning a git repository to a volume so that subsequent containers can access the source.
 
 ```typescript
 interface Volume {
   name: string
   driver: string
   driver_opts: [string, string]
-}
-```
-
-Example default volume:
-
-```json
-{
-  "volumes": [
-    {
-      "name": "default",
-      "driver": "local"
-    }
-  ]
 }
 ```
 
@@ -373,6 +346,191 @@ The name of the volume driver. This attribute is of type `string` and is require
 
 Additional volume driver options in key value format.
 
+# Definition
+
+The intermediate representation is a JSON document that defines the pipeline execution environment and execution steps. The intermediate representation consists of a top-level object of type `Config`.
+
+```json
+{
+  "version": "1",
+  "pipeline": [],
+  "networks": [],
+  "volumes": []
+}
+```
+
+## The `version` attribute
+
+The `version` attribute defines the version of the intermediate representation. This attribute is of type `string` and is optional. When empty the runtime should assume to the latest supported version of the specification.
+
+## The `volumes` section
+
+The `volumes` section defines a list of volumes created at runtime for the pipeline. Individual steps are optionally configured to mount these volumes. Note that volumes are scoped to a single running pipeline, and may not be shared with other running pipelines.
+
+Example volume configuration:
+
+```json
+{
+  "volumes": [
+    {
+      "name": "default",
+      "driver": "local"
+    }
+  ]
+}
+```
+
+Example step configured to mount the default volume:
+
+```json
+{
+  "stages": [
+    {
+      "name": "stage_1",
+      "steps": [
+        {
+          "name": "step_1",
+          "image": "golang:latest",
+          "volumes": [
+            "default:/go"
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## The `networks` section
+
+The `networks` section defines a list of networks created at runtime for the pipeline. Individual steps are optionally configured to join these networks. Note that networks are scoped to a single running pipeline, and may not be shared with other running pipelines.
+
+Example bridge network configuration:
+
+```json
+{
+  "volumes": [
+    {
+      "name": "default",
+      "driver": "bridge"
+    }
+  ]
+}
+```
+
+Example step configured to connect to the default network:
+
+```json
+{
+  "stages": [
+    {
+      "name": "stage_0",
+      "steps": [
+        {
+          "name": "step_0",
+          "image": "redis:latest",
+          "networks": [
+            {
+              "name": "default",
+              "aliases": [ "redis "]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Note the above example defines a network alias for the container. Containers on the same network can use the alias as a hostname to connect to the container.
+
+## The `pipeline` section
+
+The `pipeline` section defines a list of stages that are executed sequentially.
+<!-- Each stage contains of a list of one or more steps, executed in parallel. -->
+
+Example pipeline with multiple stages:
+
+```json
+{
+  "pipeline": [
+    {
+      "name": "stage_1",
+      "steps": []
+    }
+    {
+      "name": "stage_2",
+      "steps": []
+    }
+  ]
+}
+```
+
+### The `stages` section
+
+The `stages` section defines a list of steps executed in parallel. The runtime must wait until all steps in the current stage are finished before moving to the next stage in the pipeline.
+
+Example stage with multiple steps:
+
+```json
+{
+  "pipeline": [
+    {
+      "name": "stage_1",
+      "steps": [
+        {
+          "name": "step_01",
+          "image": "golang:latest",
+          "entrypoint": [ "/bin/sh" ],
+          "command": [ "-c", "set -e; go build; go test"],
+          "on_success": true
+        },
+        {
+          "name": "step_02",
+          "image": "node:latest",
+          "entrypoint": [ "/bin/sh" ],
+          "command": [ "-c", "set -e; npm install; npm run test"],
+          "on_success": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+### The `steps` section
+
+The `steps` section defines a list of steps executed in parallel. The runtime must wait until all steps in the list stage are finished before moving to the next stage in the pipeline.
+
+Example step:
+
+```json
+{
+  "pipeline": [
+    {
+      "name": "stage_1",
+      "steps": [
+        {
+          "name": "step_01",
+          "image": "golang:latest",
+          "entrypoint": [ "/bin/sh" ],
+          "command": [ "-c", "go test"],
+          "on_success": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+Example docker command used to run the step:
+
+```sh
+docker run --name "step_01" --entrypoint "/bin/sh" golang:latest "-c" "go test"
+```
+
+
+
 # Security
 
 _This section is non-normative._
@@ -385,7 +543,7 @@ _This section is non-normative._
 
 Backends should limit the total amount of space allowed for volume storage, because hostile authors could otherwise use this feature to exhaust the system's available disk space.
 
-Backends should also limit the total amount of space allowed for caching images (e.g. Docker images), and should regularly purge the cache to remove unused or stale images.
+Backends should also limit the total amount of space allowed for caching images (e.g. Docker images), and should regularly flush the cache to remove unused or stale images.
 
 # Examples
 

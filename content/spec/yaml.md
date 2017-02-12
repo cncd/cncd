@@ -10,7 +10,7 @@ title = "Pipeline Yaml Specification (Draft)"
   [versions]
     current = "https://github.com/cncd/cncd"
     previous = [
-      "https://github.com/cncd/cncd/tree/1.0.0",
+      "https://github.com/cncd/cncd/tree/master",
     ]
 
   [participate]
@@ -35,7 +35,7 @@ As well as sections marked as non-normative, all authoring guidelines, diagrams,
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC2119](https://tools.ietf.org/html/rfc2119).
 
-# Types
+# Structure
 
 This section defines custom types and structures used to represent the pipeline configuration.
 
@@ -510,10 +510,12 @@ The password used to authenticate to the remote registry.
 todo: add description
 
 ```
-pull_request
-push
-tag
-deployment
+enum Event {
+  pull_request,
+  push,
+  tag,
+  deployment
+}
 ```
 
 ## The `Status` enum
@@ -521,12 +523,14 @@ deployment
 todo: add description
 
 ```
-success
-failure
-changed
+enum Status {
+  success,
+  failure,
+  changed
+}
 ```
 
-# Format
+# Definition
 
 The pipeline configuration is a YAML document that defines the pipeline execution environment and execution steps. The document is unmarshaled to the following structure:
 
@@ -670,12 +674,6 @@ labels:
   - baz=qux
 ```
 
-# Version
-
-_This section is non-normative_
-
-todo
-
 # Plugins
 
 _This section is non-normative_
@@ -728,7 +726,7 @@ _This section is non-normative_
 This section demonstrates how the commands section may be converted to a powershell script for runtime execution. The following is an example configuration:
 
 ```yaml
-image: golang
+image: golang:1.7-windowsservercore
 commands:
   - go build
   - go test
@@ -737,9 +735,6 @@ commands:
 The commands section may be converted to a Windows powershell script:
 
 ```text
-#!/bin/sh
-
-set -e
 go build
 go test
 ```
@@ -748,26 +743,10 @@ The powershell script can be executed as the container entrypoint and command:
 
 ```json
 {
-  "image": "golang:latest",
-  "entrypoint": [ "/bin/bash", "-c" ],
-  "command": [ "set -e; go build; go test" ]
+  "image": "golang:1.7-windowsservercore",
+  "entrypoint": [ "powershell", "-command" ],
+  "command": [ "go build; go test" ]
 }
-```
-
-# Substitution
-
-_This section is non-normative_
-
-todo: describe substitution and possible use cases.
-
-```
-${VALUE}
-```
-
-todo: describe escaping to prevent substitution
-
-```
-$${VALUE}
 ```
 
 # Security
