@@ -169,11 +169,11 @@ Set environment variables in the container. This value is of type `[string, stri
 
 ### The `entrypoint` attribute
 
-todo
+Override the default image entrypoint. __TODO__ describe what this means in non-docker terms.
 
 ### The `command` attribute
 
-todo
+Override the default image command. __TODO__ describe what this means in non-docker terms.
 
 ### The `devices` attribute
 
@@ -446,8 +446,7 @@ Note the above example defines a network alias for the container. Containers on 
 
 ## The `pipeline` section
 
-The `pipeline` section defines a list of stages that are executed sequentially.
-<!-- Each stage contains of a list of one or more steps, executed in parallel. -->
+The `pipeline` section defines a list of stages that are executed sequentially. Each stage contains of a list of one or more steps.
 
 Example pipeline with multiple stages:
 
@@ -466,9 +465,9 @@ Example pipeline with multiple stages:
 }
 ```
 
-### The `stages` section
+### The `steps` section
 
-The `stages` section defines a list of steps executed in parallel. The runtime must wait until all steps in the current stage are finished before moving to the next stage in the pipeline.
+The `steps` section defines a list of steps executed in parallel. The runtime must wait until all steps in the current stage are finished before moving to the next stage in the pipeline.
 
 Example stage with multiple steps:
 
@@ -483,14 +482,16 @@ Example stage with multiple steps:
           "image": "golang:latest",
           "entrypoint": [ "/bin/sh" ],
           "command": [ "-c", "set -e; go build; go test"],
-          "on_success": true
+          "on_success": true,
+          "on_failure": false
         },
         {
           "name": "step_02",
           "image": "node:latest",
           "entrypoint": [ "/bin/sh" ],
           "command": [ "-c", "set -e; npm install; npm run test"],
-          "on_success": true
+          "on_success": true,
+          "on_failure": false
         }
       ]
     }
@@ -498,9 +499,9 @@ Example stage with multiple steps:
 }
 ```
 
-### The `steps` section
+### The `step` attributes
 
-The `steps` section defines a list of steps executed in parallel. The runtime must wait until all steps in the list stage are finished before moving to the next stage in the pipeline.
+The `step` object defines an individual container process. The runtime starts the container process and waits for the container to exit. If the container exit code `!= 0` the pipeline is set to a failed state.
 
 Example step:
 
@@ -515,7 +516,8 @@ Example step:
           "image": "golang:latest",
           "entrypoint": [ "/bin/sh" ],
           "command": [ "-c", "go test"],
-          "on_success": true
+          "on_success": true,
+          "on_failure": false
         }
       ]
     }
@@ -529,7 +531,21 @@ Example docker command used to run the step:
 docker run --name "step_01" --entrypoint "/bin/sh" golang:latest "-c" "go test"
 ```
 
+# Services
 
+__TODO__ describe how to configure services using detached mode and their impact on pipeline state.
+
+# States
+
+__TODO__ describe the pipeline states and their relationship to `on_success` and `on_failure`
+
+## The `on_success` attribute
+
+__TODO__
+
+## The `on_failure` attribute
+
+__TODO__
 
 # Security
 
