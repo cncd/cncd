@@ -169,11 +169,11 @@ Set environment variables in the container. This value is of type `[string, stri
 
 ### The `entrypoint` attribute
 
-Override the default image entrypoint. __TODO__ describe what this means in non-docker terms.
+Override the default image entrypoint.
 
 ### The `command` attribute
 
-Override the default image command. __TODO__ describe what this means in non-docker terms.
+Override the default image command.
 
 ### The `devices` attribute
 
@@ -346,7 +346,18 @@ The name of the volume driver. This attribute is of type `string` and is require
 
 Additional volume driver options in key value format.
 
-# Definition
+## The `State` enum
+
+The `State` enum defines the state of the pipeline. The default pipeline state is `Success`. If the pipeline encounters and exception or a steps returns a non-zero exit code, the pipeline state is set to `Failure`.
+
+```typescript
+enum State {
+  Success,
+  Failure
+}
+```
+
+# Configuration
 
 The intermediate representation is a JSON document that defines the pipeline execution environment and execution steps. The intermediate representation consists of a top-level object of type `Config`.
 
@@ -489,7 +500,7 @@ Example stage with multiple steps:
           "name": "step_02",
           "image": "node:latest",
           "entrypoint": [ "/bin/sh" ],
-          "command": [ "-c", "set -e; npm install; npm run test"],
+          "command": [ "-c", "set -e; npm install; npm test"],
           "on_success": true,
           "on_failure": false
         }
@@ -501,7 +512,7 @@ Example stage with multiple steps:
 
 ### The `step` attributes
 
-The `step` object defines an individual container process. The runtime starts the container process and waits for the container to exit. If the container exit code `!= 0` the pipeline is set to a failed state.
+The `step` object defines an individual container process. The runtime starts the container process and waits for the container to exit. If the container exit code `!= 0` the pipeline is set to a `Failure` state.
 
 Example step:
 
@@ -531,21 +542,123 @@ Example docker command used to run the step:
 docker run --name "step_01" --entrypoint "/bin/sh" golang:latest "-c" "go test"
 ```
 
-# Services
+### The `detached` attribute
 
-__TODO__ describe how to configure services using detached mode and their impact on pipeline state.
+The detached attribute instructs the runtime to start a container in the background without waiting for the container to exit. Subsequent stages and steps in the pipeline are executed while the container continues to run in the background.
+
+Detached containers are run for the duration of the pipeline only. When the last stage in the pipeline completes all service containers are stopped and destroyed. Note that the exit code for detached containers is ignored and does not impact the overall pipeline state.
+
+Example configuration starts a `redis:latest` service container in detached mode. The service container is available to subsequent steps in the pipeline using the `redis` hostname.
+
+```json
+{
+  "pipeline": [
+    {
+      "name": "stage_1",
+      "steps": [
+        {
+          "name": "step_1",
+          "image": "redis:latest",
+          "networks": [
+            {
+              "name": "default",
+              "aliases": [ "redis" ]
+            }
+          ],
+          "detached": true,
+          "on_success": true
+        }
+      ]
+    },
+    {
+      "name": "stage_2",
+      "steps": [
+        {
+          "name": "step_2",
+          "image": "golang:latest",
+          "networks": [
+            {
+              "name": "default",
+              "aliases": []
+            }
+          ],
+          "entrypoint": [ "/bin/sh" ],
+          "command": [ "-c", "go test"],
+          "on_success": true
+        }
+      ]
+    }
+  ],
+  "networks": [
+    {
+      "name": "default",
+      "driver": "bridge"
+    }
+  ]
+}
+```
 
 # States
 
-__TODO__ describe the pipeline states and their relationship to `on_success` and `on_failure`
+The pipeline state can be one of the below values. The pipeline state is set to `Failure` if an exception is encountered or if a step returns an non-zero exit code.
 
-## The `on_success` attribute
+```typescript
+enum State {
+  Success,
+  Failure
+}
+```
 
-__TODO__
+Please note that when the pipeline state is set to `Failure` the pipeline must continue execution. The state is evaluated prior to execution of each pipeline step to determine if it should be executed or skipped.
 
-## The `on_failure` attribute
+* If the pipeline state is `Success` and the step's `on_success` attribute is `true`, the step is executed
+* If the pipeline state is `Success` and the step's `on_success` attribute is `false`, the step is skipped
+* If the pipeline state is `Failure` and the step's `on_failure` attribute is `true`, the step is executed
+* If the pipeline state is `Failure` and the step's `on_failure` attribute is `false`, the step is skipped
 
-__TODO__
+Example step executes when pipeline `state != Failure`
+
+```diff
+{
+  "pipeline": [
+    {
+      "name": "stage_1",
+      "steps": [
+        {
+          "name": "step_01",
+          "image": "golang:latest",
+          "entrypoint": [ "/bin/sh" ],
+          "command": [ "-c", "go test"],
++         "on_success": true,
+          "on_failure": false
+        }
+      ]
+    }
+  ]
+}
+```
+
+Example step executes when pipeline `state == Failure`
+
+```diff
+{
+  "pipeline": [
+    {
+      "name": "stage_1",
+      "steps": [
+        {
+          "name": "step_01",
+          "image": "golang:latest",
+          "entrypoint": [ "/bin/sh" ],
+          "command": [ "-c", "go test"],
+          "on_success": false,
++         "on_failure": true
+        }
+      ]
+    }
+  ]
+}
+```
 
 # Security
 
@@ -778,18 +891,116 @@ In the following example the intermediate representation defines two stages. The
           "on_failure": false
         },
         {
-          "name": "go_test_step",
-          "image": "golang:latest",
+          "name": "node_test_step",
+          "image": "node:latest",
           "working_dir": "/go/src/github.com/foo/bar",
           "entrypoint": [
             "/bin/sh",
             "-c"
           ],
           "command": [
-            "npm install; npm run tests; npm run bundle"
+            "npm install; npm test; npm run bundle"
           ],
           "volumes": [
             "default:/go"
+          ],
+          "on_success": true,
+          "on_failure": false
+        }
+      ],
+    }
+  ],
+
+  "volumes": [
+    {
+      "name": "default",
+      "driver": "local"
+    }
+  ]
+}
+```
+
+## Example Travis Configuration
+
+The goal of this specification is to provide a machine writable format to which higher-level configurations can compile. This is an example `.travis.yml` configuration:
+
+```yaml
+language: node
+
+node_js:
+  - 6.1
+
+install:
+  - npm install
+script:
+  - npm test
+```
+
+Example `.travis.yml` compiled to the intermediate representation:
+
+```json
+{
+  "pipeline": [
+    {
+      "name": "clone_stage",
+      "steps": [
+        {
+          "name": "clone_step",
+          "image": "node:6.1",
+          "working_dir": "/Users/travis/build",
+          "entrypoint": [
+            "/bin/sh",
+            "-c"
+          ],
+          "command": [
+            "git clone git://github.com/foo/bar.git /Users/travis/build"
+          ],
+          "volumes": [
+            "default:/Users/travis/build"
+          ],
+          "on_success": true,
+          "on_failure": false
+        }
+      ],
+    },
+    {
+      "name": "install_stage",
+      "steps": [
+        {
+          "name": "install_step",
+          "image": "node:6.1",
+          "working_dir": "/Users/travis/build",
+          "entrypoint": [
+            "/bin/sh",
+            "-c"
+          ],
+          "command": [
+            "npm install"
+          ],
+          "volumes": [
+            "default:/Users/travis/build"
+          ],
+          "on_success": true,
+          "on_failure": false
+        }
+      ],
+    }
+    {
+      "name": "script_stage",
+      "steps": [
+        {
+          "name": "script_step",
+          "image": "node:6.1",
+          "working_dir": "/Users/travis/build",
+          "entrypoint": [
+            "/bin/sh",
+            "-c"
+          ],
+          "command": [
+            "npm test"
+          ],
+          "volumes": [
+            "default:/Users/travis/build"
           ],
           "on_success": true,
           "on_failure": false
