@@ -49,6 +49,8 @@ The intermediate representation should be platform agnostic. This means it can b
 * Docker Swarm
 * Kubernetes
 * Rocket
+* Hyper
+* ECS
 
 # Conformance
 
