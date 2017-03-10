@@ -397,7 +397,7 @@ Example step configured to mount the default volume:
 
 ```json
 {
-  "stages": [
+  "pipeline": [
     {
       "name": "stage_1",
       "steps": [
@@ -435,7 +435,7 @@ Example step configured to connect to the default network:
 
 ```json
 {
-  "stages": [
+  "pipeline": [
     {
       "name": "stage_0",
       "steps": [
